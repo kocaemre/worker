@@ -9,6 +9,10 @@ COPY . .
 FROM node:20-slim
 WORKDIR /app
 ENV NODE_ENV=production
+
+# Install OpenSSL and other required system libraries for Prisma
+RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
+
 COPY --from=build /app /app
 # Generate Prisma client at runtime
 RUN npm run generate 2>/dev/null || echo "Prisma generate will run at startup"
