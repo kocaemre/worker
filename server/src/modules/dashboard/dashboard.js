@@ -118,7 +118,7 @@ app.get('/', async (req, res) => {
                          <tr>
                              <td><strong>${node.name}</strong></td>
                              <td><span style="background: #e5e7eb; padding: 2px 6px; border-radius: 4px; font-size: 0.8em;">${node.blockchainProject.displayName}</span></td>
-                             <td>${node.user.email || 'N/A'}</td>
+                             <td>${node.user.email ? `<span style="display:inline-block;width:28px;height:28px;background:#2563eb;color:white;border-radius:50%;text-align:center;line-height:28px;font-weight:bold;">${node.user.email[0].toUpperCase()}</span>` : 'N/A'}</td>
                              <td><span style="background: ${planColor}; padding: 2px 6px; border-radius: 4px; font-size: 0.8em;">${node.user.subscriptionStatus}</span></td>
                              <td>${lastCheckTime}</td>
                              <td class="${statusColor}">
