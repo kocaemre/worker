@@ -9,10 +9,11 @@ COPY . .
 FROM node:20-slim
 WORKDIR /app
 ENV NODE_ENV=production
+ENV OPENSSL_CONF=/dev/null
 
 # Install OpenSSL and other required system libraries for Prisma
 RUN apt-get update -y && \
-    apt-get install -y openssl libssl1.1 ca-certificates && \
+    apt-get install -y openssl libssl3 ca-certificates && \
     rm -rf /var/lib/apt/lists/*
 
 COPY --from=build /app /app
