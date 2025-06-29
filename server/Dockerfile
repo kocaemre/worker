@@ -2,7 +2,7 @@
 FROM node:20-bookworm AS build
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci --production=false
+RUN npm install --production=false
 COPY . .
 RUN npm run generate
 
