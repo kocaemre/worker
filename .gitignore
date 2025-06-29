@@ -1,0 +1,27 @@
+# Node & npm
+node_modules/
+.npm/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Env files
+.env
+.env.*
+
+# Build outputs
+/dist
+/build
+
+# Prisma
+/prisma/migrations/*/README.md
+
+# Docker artifacts
+*.local
+
+# IDEs
+.vscode/
+.idea/
+.DS_Store 
