@@ -1,13 +1,13 @@
 # Zepatrol Worker – Kurulum Kılavuzu
 
 Bu dosya, **Supabase veritabanı** kullanan bir VPS üzerinde Zepatrol Worker'ı kurmanız için adım adım rehberdir.⁠  
-(İsterseniz Docker Compose yöntemi için ➋ numaralı bölüme atlayın.)
+**Önerilen yöntem: Docker Compose** (daha kolay ve güvenli)
 
 ---
 ## İçindekiler
 1. Gereksinimler & Ön Hazırlık  
-2. ➊ Native (Node.js) Kurulum  
-3. ➋ Docker Compose Kurulumu  
+2. ➊ Docker Compose Kurulumu (Önerilen)  
+3. ➋ Native Node.js Kurulumu (Opsiyonel)  
 4. Telegram Bot & Chat ID Alma  
 5. Test & Doğrulama  
 6. Güncelleme ve Bakım
@@ -15,14 +15,68 @@ Bu dosya, **Supabase veritabanı** kullanan bir VPS üzerinde Zepatrol Worker'ı
 ---
 ## 1. Gereksinimler & Ön Hazırlık
 * Linux (VPS) erişimi (SSH)  
-* Node.js ≥ 20 **veya** Docker 24  
+* **Docker & Docker Compose** (önerilen)
 * Supabase / PostgreSQL bağlantı dizesi  
 * SMTP hesabı (Postmark, Yandex, Gmail App-Password…)  
 * Telegram bot token'ı (opsiyonel – premium uyarıları)
 
 ---
-## 2. ➊ Native (Node.js) Kurulum
-### 2.1 Sunucuyu hazırlayın
+## 2. ➊ Docker Compose Kurulumu (Önerilen)
+
+### 2.1 Docker kurulumu
+```bash
+# Ubuntu/Debian için
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+sudo usermod -aG docker $USER
+# Yeniden giriş yapın veya: newgrp docker
+```
+
+### 2.2 Projeyi klonlayın
+```bash
+git clone https://github.com/kocaemre/worker.git zepatrol
+cd zepatrol/server
+```
+
+### 2.3 Ortam değişkenlerini ayarlayın
+```bash
+cp env.example .env
+nano .env                    # aşağıdaki alanları doldur
+```
+Gerekli değişkenler:
+```
+DATABASE_URL=postgresql://postgres:<PW>@db.<SUPABASE_REF>.supabase.co:5432/postgres
+EMAIL_HOST=smtp.example.com
+EMAIL_PORT=587
+EMAIL_USER=alerts@example.com
+EMAIL_PASS=<smtp-password>
+TEST_EMAIL_TO=mail@gmail.com
+TELEGRAM_BOT_TOKEN=123456:ABC...      # premium uyarıları için
+```
+
+### 2.4 Worker'ı başlatın
+```bash
+docker compose up -d --build
+```
+
+### 2.5 Veritabanı şemasını uygulayın
+```bash
+docker compose exec worker npm run migrate
+```
+
+### 2.6 (İsteğe bağlı) Demo veri
+```bash
+docker compose exec worker npm run seed
+```
+
+**Tamamlandı!** Worker artık arka planda çalışıyor.
+- Logları görme: `docker compose logs -f worker`  
+- Durdurma: `docker compose down`  
+- Yeniden başlatma: `docker compose restart worker`
+
+---
+## 3. ➋ Native Node.js Kurulumu (Opsiyonel)
+### 3.1 Sunucuyu hazırlayın
 ```bash
 ssh <user>@<SERVER_IP>
 # Güncellemeler ve Node 20
@@ -30,13 +84,13 @@ sudo apt update && sudo apt install -y git curl build-essential
 curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
 ```
 
-### 2.2 Depoyu klonlayın
+### 3.2 Depoyu klonlayın
 ```bash
-git clone https://github.com/<kullanici>/zepatrol.git
+git clone https://github.com/kocaemre/worker.git zepatrol
 cd zepatrol/server
 ```
 
-### 2.3 Ortam değişkenlerini ayarlayın
+### 3.3 Ortam değişkenlerini ayarlayın
 ```bash
 cp env.example .env          # şablonu kopyala
 nano .env                    # aşağıdaki alanları doldur
@@ -53,25 +107,25 @@ TELEGRAM_BOT_TOKEN=123456:ABC...      # premium uyarıları için
 ```
 (extras: `CHECK_INTERVAL_CRON`, `NODE_ENV`, vs. varsayılan kalabilir)
 
-### 2.4 Bağımlılıkları kurun
+### 3.4 Bağımlılıkları kurun
 ```bash
 npm install
 ```
 
-### 2.5 Veritabanı şemasını uygulayın
+### 3.5 Veritabanı şemasını uygulayın
 ```bash
 npm run migrate
 ```
 
-### 2.6 (İsteğe bağlı) Demo veri
+### 3.6 (İsteğe bağlı) Demo veri
 ```bash
 npm run seed
 ```
 
-### 2.7 Worker'ı başlatın
+### 3.7 Worker'ı başlatın
 Geliştirme (ekrana log basar):
 ```bash
-npm start
+npm run dev
 ```
 Üretimde systemd servisi olarak arka planda:
 ```bash
@@ -96,28 +150,6 @@ sudo systemctl enable --now zepatrol-worker
 Durum: `sudo systemctl status zepatrol-worker`
 
 ---
-## 3. ➋ Docker Compose Kurulumu
-Supabase gibi **uzak** DB kullanıyorsanız docker-compose dosyanız en sade hâliyle:
-```yaml
-version: '3.9'
-services:
-  worker:
-    build: ./server
-    env_file:
-      - .env
-    ports:
-      - '9100:9100'
-```
-1. `.env` dosyasını aynı adımlarla doldurun.  
-2. Çalıştırın:
-```bash
-docker compose up -d --build
-```
-Loglar: `docker compose logs -f worker`
-
-_Not_: Yerel Postgres istediğinizde `db:` servisini ekleyip aynı `.env` dosyasını kullanabilirsiniz.
-
----
 ## 4. Telegram Bot & Chat ID
 ### 4.1 Bot token'ı
 1. Telegram → **@BotFather** → `/newbot` → isim ver.  
@@ -137,10 +169,19 @@ _İleri seviye_: Deep-link ile chat ID'yi otomatik toplamak için `/t.me/<Bot>?s
 ---
 ## 5. Test & Doğrulama
 ### 5.1 SMTP + Telegram testi
+
+**Docker ile:**
 ```bash
 export TELEGRAM_CHAT_ID=<kendi_id>   # sadece test-alert sırasında lazım
-npm run test-alert
+docker compose exec worker npm run test-alert
 ```
+
+**Native kurulum ile:**
+```bash
+export TELEGRAM_CHAT_ID=<kendi_id>   # sadece test-alert sırasında lazım
+cd server && npm run test-alert
+```
+
 Terminalde `Test e-mail sent` ve varsa `Test telegram sent` logları görünür.
 
 ### 5.2 Canlı uyarı testi
@@ -149,19 +190,29 @@ Terminalde `Test e-mail sent` ve varsa `Test telegram sent` logları görünür.
 
 ---
 ## 6. Güncelleme & Bakım
+
+### Docker Compose (Önerilen)
 ```bash
-cd ~/zepatrol
+cd ~/zepatrol/server
 git pull
-cd server
+docker compose down
+docker compose up -d --build
+docker compose exec worker npm run migrate  # şema güncel ise
+```
+
+### Native kurulum
+```bash
+cd ~/zepatrol/server
+git pull
 npm install
 npm run migrate           # şema güncel ise
-sudo systemctl restart zepatrol-worker   # veya docker compose up -d --build
+sudo systemctl restart zepatrol-worker
 ```
 
 ### İzleme
 * Prometheus endpoint'i: `http://<SERVER_IP>:9100/metrics`  
-* Systemd logları: `journalctl -u zepatrol-worker -f`  
-* Docker logları: `docker compose logs -f worker`
+* Docker logları: `docker compose logs -f worker`  
+* Systemd logları: `journalctl -u zepatrol-worker -f` (native kurulum)
 
 ---
 **Hepsi bu kadar!**  

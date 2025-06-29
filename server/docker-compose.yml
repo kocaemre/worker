@@ -1,5 +1,3 @@
-version: '3.9'
-
 services:
   db:
     image: postgres:16-alpine
@@ -11,7 +9,7 @@ services:
       - pgdata:/var/lib/postgresql/data
 
   worker:
-    build: ./server
+    build: .
     env_file:
       - .env
     ports:
