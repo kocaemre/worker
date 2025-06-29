@@ -94,20 +94,21 @@ $ npm start
 * `TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_ID` – (opsiyonel).
 
 ## Veritabanı Şeması
-Temel tablolar: **User**, **Node**, **Check**.
-* `User.plan` alanı free/premium ayrımını tutar.
-* `Node.nextCheckAt` => kontrol kuyruğunu belirler.
-* `Check` kaydı her health-check sonucunu saklar.
+Temel tablolar: **User**, **Node**, **Alert**, **BlockchainProject**.
+* `User.subscriptionStatus` alanı free/premium ayrımını tutar.
+* `Node.nodeConfig` JSON formatında kullanıcı kredansiyelleri saklar.
+* `Alert` kaydı node problemleri için uyarı tutar.
+* `BlockchainProject` desteklenen blockchain'leri ve doğrulama yöntemlerini tanımlar.
 
 ## Çalışma Mantığı
 1. node-cron, `env.CHECK_INTERVAL_CRON` ifadesine göre `checker` modülünü tetikler.
-2. Checker, `nextCheckAt ≤ now()` olan düğümleri çeker.
-3. Node'un `method` alanına bakarak HTTP / JSON-RPC / Ping kontrolü yapar.
-4. Sonuç `Check` tablosuna yazılır.
-5. Başarısızsa:
-   * Her plan → E-posta
+2. Checker, izlenen tüm node'ları çeker ve plan bazlı kontrol sıklığına göre filtreler.
+3. Node'un `blockchainProject.validationMethod` alanına bakarak HTTP / JSON-RPC / API kontrolü yapar.
+4. Başarısızsa `Alert` tablosuna kayıt yazılır.
+5. Başarısızlık durumunda:
+   * Her plan → E-posta (notificationEmail veya email'e)
    * Premium → Telegram (chatId mevcutsa)
-6. `nextCheckAt`, plan bazlı süre kadar ileri alınır (15 dk veya 24 saat).
+6. Plan bazlı kontrol sıklığı: Premium 15 dk, Free 24 saat.
 
 ## Test & Kapsama
 ```bash

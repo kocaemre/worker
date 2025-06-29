@@ -7,6 +7,6 @@ import { runChecks } from '../checks/checker.js';
 export const scheduleJobs = ({ prisma, logger, env }) => {
   cron.schedule(env.CHECK_INTERVAL_CRON, async () => {
     logger.info('Cron triggered');
-    await runChecks({ prisma, logger, env });
+    await runChecks({ prisma, logger });
   });
 }; 

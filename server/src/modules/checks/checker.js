@@ -52,13 +52,19 @@ export const runChecks = async ({ prisma, logger }) => {
       result = { ok: false, error: err.message };
     }
 
-    await prisma.check.create({
-      data: {
-        nodeId: node.id,
-        ok: result.ok,
-        latencyMs: result.latency ?? null,
-      },
-    });
+    // Create alert if unhealthy
+    if (!result.ok) {
+      await prisma.alert.create({
+        data: {
+          userId: node.userId,
+          nodeId: node.id,
+          type: 'downtime',
+          severity: 'high',
+          message: `Node ${node.name} is down: ${result.error ?? 'Unknown error'}`,
+          isSent: false,
+        },
+      });
+    }
 
     await prisma.node.update({
       where: { id: node.id },
@@ -71,7 +77,7 @@ export const runChecks = async ({ prisma, logger }) => {
     });
 
     if (!result.ok) {
-      await sendAlert({ node, result, logger });
+      await sendAlert({ node, result, logger, prisma });
     }
   }
 }; 
