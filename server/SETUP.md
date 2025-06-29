@@ -28,7 +28,6 @@ ssh <user>@<SERVER_IP>
 # Güncellemeler ve Node 20
 sudo apt update && sudo apt install -y git curl build-essential
 curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-sudo apt install -y nodejs
 ```
 
 ### 2.2 Depoyu klonlayın
