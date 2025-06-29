@@ -11,7 +11,9 @@ WORKDIR /app
 ENV NODE_ENV=production
 
 # Install OpenSSL and other required system libraries for Prisma
-RUN apt-get update -y && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
+RUN apt-get update -y && \
+    apt-get install -y openssl libssl1.1 ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
 
 COPY --from=build /app /app
 # Generate Prisma client at runtime
