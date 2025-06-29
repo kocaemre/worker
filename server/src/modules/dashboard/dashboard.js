@@ -99,6 +99,7 @@ app.get('/', async (req, res) => {
                          <th>User</th>
                          <th>Plan</th>
                          <th>Last Check</th>
+                         <th>Next Check</th>
                          <th>Status</th>
                          <th>Response Time</th>
                          <th>Monitoring</th>
@@ -107,6 +108,13 @@ app.get('/', async (req, res) => {
                 <tbody>
                                          ${nodes.map(node => {
                        const lastCheckTime = node.lastCheck ? new Date(node.lastCheck).toLocaleString() : 'Never';
+                       const plan = node.user.subscriptionStatus;
+                       const intervalMs = plan === 'premium' ? 15 * 60 * 1000 : 24 * 60 * 60 * 1000;
+                       let nextCheck = '-';
+                       if (node.lastCheck) {
+                         const next = new Date(new Date(node.lastCheck).getTime() + intervalMs);
+                         nextCheck = next.toLocaleString();
+                       }
                        const statusColor = node.status === 'healthy' ? 'status-ok' : 
                                           node.status === 'unhealthy' ? 'status-error' : 'status-pending';
                        const statusIcon = node.status === 'healthy' ? '✅ Healthy' : 
@@ -121,6 +129,7 @@ app.get('/', async (req, res) => {
                              <td>${node.user.email ? `<span style="display:inline-block;width:28px;height:28px;background:#2563eb;color:white;border-radius:50%;text-align:center;line-height:28px;font-weight:bold;">${node.user.email[0].toUpperCase()}</span>` : 'N/A'}</td>
                              <td><span style="background: ${planColor}; padding: 2px 6px; border-radius: 4px; font-size: 0.8em;">${node.user.subscriptionStatus}</span></td>
                              <td>${lastCheckTime}</td>
+                             <td>${nextCheck}</td>
                              <td class="${statusColor}">
                                  ${statusIcon}
                              </td>
