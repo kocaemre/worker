@@ -8,6 +8,7 @@ const envSchema = z.object({
   EMAIL_PORT: z.coerce.number(),
   EMAIL_USER: z.string(),
   EMAIL_PASS: z.string(),
+  TEST_EMAIL_TO: z.string().optional(),
   TELEGRAM_BOT_TOKEN: z.string().optional(),
   NODE_ENV: z.string().default('development'),
 });

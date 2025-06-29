@@ -11,8 +11,9 @@ const logger = createLogger('development');
 
   // Email
   try {
-    await sendEmail(env.EMAIL_USER, 'Zepatrol Test E-mail', '✅ Mail ayarları çalışıyor!');
-    logger.info('Test e-mail sent');
+    const testEmailTo = env.TEST_EMAIL_TO || env.EMAIL_USER;
+    await sendEmail(testEmailTo, 'Zepatrol Test E-mail', '✅ Mail ayarları çalışıyor!');
+    logger.info(`Test e-mail sent to ${testEmailTo}`);
   } catch (err) {
     logger.error({ err }, 'Failed to send test e-mail');
   }
