@@ -6,15 +6,18 @@ const app = express();
 // Dashboard endpoint
 app.get('/', async (req, res) => {
   try {
-    // Get all nodes with their latest checks
+    // Get all nodes with their blockchain projects and latest alerts
     const nodes = await prisma.node.findMany({
       include: {
         user: {
-          select: { email: true, plan: true }
+          select: { email: true, subscriptionStatus: true }
         },
-        checks: {
+        blockchainProject: {
+          select: { name: true, displayName: true }
+        },
+        alerts: {
           orderBy: { createdAt: 'desc' },
-          take: 1
+          take: 3
         }
       }
     });
@@ -22,11 +25,11 @@ app.get('/', async (req, res) => {
     // Get total stats
     const totalNodes = await prisma.node.count();
     const totalUsers = await prisma.user.count();
-    const totalChecks = await prisma.check.count();
-    const healthyNodes = await prisma.check.count({
+    const totalAlerts = await prisma.alert.count();
+    const healthyNodes = await prisma.node.count({
       where: {
-        ok: true,
-        createdAt: {
+        status: 'healthy',
+        lastCheck: {
           gte: new Date(Date.now() - 30 * 60 * 1000) // Son 30 dakika
         }
       }
@@ -77,10 +80,10 @@ app.get('/', async (req, res) => {
                 <div class="stat-number">${totalUsers}</div>
                 <div>Total Users</div>
             </div>
-            <div class="stat-card">
-                <div class="stat-number">${totalChecks}</div>
-                <div>Total Checks</div>
-            </div>
+                         <div class="stat-card">
+                 <div class="stat-number">${totalAlerts}</div>
+                 <div>Total Alerts</div>
+             </div>
             <div class="stat-card">
                 <div class="stat-number">${healthyNodes}</div>
                 <div>Healthy (30m)</div>
@@ -89,42 +92,43 @@ app.get('/', async (req, res) => {
 
         <div class="nodes-table">
             <table>
-                <thead>
-                    <tr>
-                        <th>Node URL</th>
-                        <th>Method</th>
-                        <th>User</th>
-                        <th>Plan</th>
-                        <th>Last Check</th>
-                        <th>Status</th>
-                        <th>Latency</th>
-                        <th>Next Check</th>
-                    </tr>
-                </thead>
+                                 <thead>
+                     <tr>
+                         <th>Node Name</th>
+                         <th>Blockchain Project</th>
+                         <th>User</th>
+                         <th>Plan</th>
+                         <th>Last Check</th>
+                         <th>Status</th>
+                         <th>Response Time</th>
+                         <th>Monitoring</th>
+                     </tr>
+                 </thead>
                 <tbody>
-                    ${nodes.map(node => {
-                      const lastCheck = node.checks[0];
-                      const nextCheck = new Date(node.nextCheckAt);
-                      const now = new Date();
-                      const timeUntilNext = nextCheck > now ? 
-                        `${Math.ceil((nextCheck - now) / (1000 * 60))}m` : 
-                        'Due now';
-                      
-                      return `
-                        <tr>
-                            <td><code>${node.url}</code></td>
-                            <td><span style="background: #e5e7eb; padding: 2px 6px; border-radius: 4px; font-size: 0.8em;">${node.method}</span></td>
-                            <td>${node.user.email}</td>
-                            <td><span style="background: ${node.user.plan === 'premium' ? '#dcfce7; color: #166534' : '#fef3c7; color: #92400e'}; padding: 2px 6px; border-radius: 4px; font-size: 0.8em;">${node.user.plan}</span></td>
-                            <td>${lastCheck ? new Date(lastCheck.createdAt).toLocaleString() : 'Never'}</td>
-                            <td class="${lastCheck ? (lastCheck.ok ? 'status-ok' : 'status-error') : 'status-pending'}">
-                                ${lastCheck ? (lastCheck.ok ? '✅ OK' : '❌ Error') : '⏳ Pending'}
-                            </td>
-                            <td>${lastCheck?.latencyMs ? lastCheck.latencyMs + 'ms' : '-'}</td>
-                            <td class="next-check">${timeUntilNext}</td>
-                        </tr>
-                      `;
-                    }).join('')}
+                                         ${nodes.map(node => {
+                       const lastCheckTime = node.lastCheck ? new Date(node.lastCheck).toLocaleString() : 'Never';
+                       const statusColor = node.status === 'healthy' ? 'status-ok' : 
+                                          node.status === 'unhealthy' ? 'status-error' : 'status-pending';
+                       const statusIcon = node.status === 'healthy' ? '✅ Healthy' : 
+                                         node.status === 'unhealthy' ? '❌ Unhealthy' : 
+                                         node.status === 'offline' ? '⚫ Offline' : '⏳ Unknown';
+                       const planColor = node.user.subscriptionStatus === 'premium' ? '#dcfce7; color: #166534' : '#fef3c7; color: #92400e';
+                       
+                       return `
+                         <tr>
+                             <td><strong>${node.name}</strong></td>
+                             <td><span style="background: #e5e7eb; padding: 2px 6px; border-radius: 4px; font-size: 0.8em;">${node.blockchainProject.displayName}</span></td>
+                             <td>${node.user.email || 'N/A'}</td>
+                             <td><span style="background: ${planColor}; padding: 2px 6px; border-radius: 4px; font-size: 0.8em;">${node.user.subscriptionStatus}</span></td>
+                             <td>${lastCheckTime}</td>
+                             <td class="${statusColor}">
+                                 ${statusIcon}
+                             </td>
+                             <td>${node.lastResponseTime ? node.lastResponseTime + 'ms' : '-'}</td>
+                             <td>${node.isMonitoring ? '🟢 Active' : '🔴 Paused'}</td>
+                         </tr>
+                       `;
+                     }).join('')}
                 </tbody>
             </table>
         </div>
@@ -148,11 +152,11 @@ app.get('/api/status', async (req, res) => {
     const stats = {
       totalNodes: await prisma.node.count(),
       totalUsers: await prisma.user.count(),
-      totalChecks: await prisma.check.count(),
-      healthyNodes: await prisma.check.count({
+      totalAlerts: await prisma.alert.count(),
+      healthyNodes: await prisma.node.count({
         where: {
-          ok: true,
-          createdAt: {
+          status: 'healthy',
+          lastCheck: {
             gte: new Date(Date.now() - 30 * 60 * 1000)
           }
         }
