@@ -1,5 +1,5 @@
 # Node & npm
-server/git node_modules/
+server/node_modules/
 .npm/
 
 # Logs
