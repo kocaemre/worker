@@ -1,0 +1,36 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             Int      @id @default(autoincrement())
+  email          String   @unique
+  plan           String   @default("free")
+  telegramChatId String?
+  nodes          Node[]
+}
+
+model Node {
+  id          Int      @id @default(autoincrement())
+  url         String
+  method      String   @default("http") // http | jsonRpc | ping | api
+  keyword     String?
+  nextCheckAt DateTime
+  user        User     @relation(fields: [userId], references: [id])
+  userId      Int
+  checks      Check[]
+}
+
+model Check {
+  id        Int      @id @default(autoincrement())
+  node      Node     @relation(fields: [nodeId], references: [id])
+  nodeId    Int
+  ok        Boolean
+  latencyMs Int?
+  createdAt DateTime @default(now())
+} 

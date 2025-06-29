@@ -1,0 +1,29 @@
+version: '3.9'
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  worker:
+    build: ./server
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@db:5432/postgres
+      CHECK_INTERVAL_CRON: '*/5 * * * *'
+      EMAIL_HOST: smtp.example.com
+      EMAIL_PORT: 587
+      EMAIL_USER: username
+      EMAIL_PASS: password
+      TELEGRAM_BOT_TOKEN: ''
+    ports:
+      - '9100:9100'
+
+volumes:
+  pgdata: 
