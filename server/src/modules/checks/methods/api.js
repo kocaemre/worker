@@ -11,8 +11,19 @@ export const apiCheck = async (baseUrl, keyword = '') => {
   const start = Date.now();
   try {
     const res = await axios.get(url, { timeout: 4000 });
-    return { ok: res.status < 400, latency: Date.now() - start };
+    if (res.status === 200 && res.data && res.data.online === true) {
+      return { ok: true, latency: Date.now() - start };
+    }
+    // Eğer online false ise veya başka bir durum varsa
+    return {
+      ok: false,
+      error: res.data && res.data.online === false
+        ? 'Node offline (online:false)'
+        : `Unexpected response: ${JSON.stringify(res.data)}`,
+      latency: Date.now() - start
+    };
   } catch (err) {
+    // HTTP 400 veya başka bir hata
     return { ok: false, error: err.message };
   }
 }; 
