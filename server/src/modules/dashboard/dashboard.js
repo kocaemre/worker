@@ -114,7 +114,9 @@ app.get('/', async (req, res) => {
                        const lastCheckTime = node.lastCheck ? new Date(node.lastCheck).toLocaleString() : 'Never';
                        const plan = node.user.subscriptionStatus;
                        const isGenysn = node.blockchainProject.category === 'genysn';
-                       const intervalMs = isGenysn ? 30 * 60 * 1000 : (plan === 'premium' ? 15 * 60 * 1000 : 24 * 60 * 60 * 1000);
+                       const intervalMs = isGenysn ? 
+                         (plan === 'premium' ? 30 * 60 * 1000 : 24 * 60 * 60 * 1000) : 
+                         (plan === 'premium' ? 15 * 60 * 1000 : 24 * 60 * 60 * 1000);
                        let nextCheck = '-';
                        if (node.lastCheck) {
                          const next = new Date(new Date(node.lastCheck).getTime() + intervalMs);

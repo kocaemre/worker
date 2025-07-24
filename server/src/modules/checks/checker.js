@@ -21,7 +21,7 @@ export const runChecks = async ({ prisma, logger }) => {
     const { validationMethod, validationUrl, category } = node.blockchainProject;
     let intervalMs;
     if (category === 'genysn') {
-      intervalMs = 30 * 60_000; // 30 minutes
+      intervalMs = plan === 'premium' ? 30 * 60_000 : 24 * 60 * 60_000; // 30 min for premium, 24h for free
     } else {
       intervalMs = plan === 'premium' ? 15 * 60_000 : 24 * 60 * 60_000;
     }
