@@ -115,7 +115,7 @@ app.get('/', async (req, res) => {
                        const plan = node.user.subscriptionStatus;
                        const isGenysn = node.blockchainProject.category === 'genysn';
                        const intervalMs = isGenysn ? 
-                         (plan === 'premium' ? 30 * 60 * 1000 : 24 * 60 * 60 * 1000) : 
+                         (plan === 'premium' ? 2 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000) : 
                          (plan === 'premium' ? 15 * 60 * 1000 : 24 * 60 * 60 * 1000);
                        let nextCheck = '-';
                        if (node.lastCheck) {

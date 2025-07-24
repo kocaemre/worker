@@ -21,7 +21,7 @@ export const runChecks = async ({ prisma, logger }) => {
     const { validationMethod, validationUrl, category } = node.blockchainProject;
     let intervalMs;
     if (category === 'genysn') {
-      intervalMs = plan === 'premium' ? 30 * 60_000 : 24 * 60 * 60_000; // 30 min for premium, 24h for free
+      intervalMs = plan === 'premium' ? 2 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000; // 2 saat premium, 24 saat free
     } else {
       intervalMs = plan === 'premium' ? 15 * 60_000 : 24 * 60 * 60_000;
     }
@@ -143,6 +143,11 @@ export const runChecks = async ({ prisma, logger }) => {
         });
         console.log('DEBUG: no_score_increase alert created');
         await sendAlert({ node, result: { ...result, error: 'Score not increasing' }, logger, prisma });
+        // Sayaç sıfırla
+        await prisma.node.update({
+          where: { id: node.id },
+          data: { consecutive_no_score_increase: 0 }
+        });
       } else {
         console.log('DEBUG: Skipping duplicate no_score_increase alert for node', node.id, node.name);
       }
