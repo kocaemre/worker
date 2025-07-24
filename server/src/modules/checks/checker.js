@@ -121,19 +121,31 @@ export const runChecks = async ({ prisma, logger }) => {
     }
 
     if (genysNoScoreAlert) {
-      console.log('DEBUG: Creating no_score_increase alert for node', node.id, node.name);
-      await prisma.alert.create({
-        data: {
-          userId: node.userId,
+      // Aynı node ve aynı tipte isSent=false alert var mı kontrol et
+      const existingUnsent = await prisma.alert.findFirst({
+        where: {
           nodeId: node.id,
           type: 'no_score_increase',
-          severity: 'medium',
-          message: `Node ${node.name} has not increased its score for 3 consecutive checks!`,
-          isSent: false,
-        },
+          isSent: false
+        }
       });
-      console.log('DEBUG: no_score_increase alert created');
-      await sendAlert({ node, result: { ...result, error: 'Score not increasing' }, logger, prisma });
+      if (!existingUnsent) {
+        console.log('DEBUG: Creating no_score_increase alert for node', node.id, node.name);
+        await prisma.alert.create({
+          data: {
+            userId: node.userId,
+            nodeId: node.id,
+            type: 'no_score_increase',
+            severity: 'medium',
+            message: `Node ${node.name} has not increased its score for 3 consecutive checks!`,
+            isSent: false,
+          },
+        });
+        console.log('DEBUG: no_score_increase alert created');
+        await sendAlert({ node, result: { ...result, error: 'Score not increasing' }, logger, prisma });
+      } else {
+        console.log('DEBUG: Skipping duplicate no_score_increase alert for node', node.id, node.name);
+      }
     }
 
     const updateData = {
