@@ -80,10 +80,10 @@ app.get('/', async (req, res) => {
                 <div class="stat-number">${totalUsers}</div>
                 <div>Total Users</div>
             </div>
-                         <div class="stat-card">
-                 <div class="stat-number">${totalAlerts}</div>
-                 <div>Total Alerts</div>
-             </div>
+            <div class="stat-card">
+                <div class="stat-number">${totalAlerts}</div>
+                <div>Total Alerts</div>
+            </div>
             <div class="stat-card">
                 <div class="stat-number">${healthyNodes}</div>
                 <div>Healthy (30m)</div>
@@ -92,31 +92,29 @@ app.get('/', async (req, res) => {
 
         <div class="nodes-table">
             <table>
-                                 <thead>
-                     <tr>
-                         <th>Node Name</th>
-                         <th>Blockchain Project</th>
-                         <th>User</th>
-                         <th>Plan</th>
-                         <th>Last Check</th>
-                         <th>Next Check</th>
-                         <th>Status</th>
-                         <th>Response Time</th>
-                         <th>Monitoring</th>
-                         <th>Reward</th>
-                         <th>Score</th>
-                         <th>Reward Artmama</th>
-                         <th>Score Artmama</th>
-                         <th>Ardışık Hata</th>
-                         <th>Son Alertler</th>
-                     </tr>
-                 </thead>
+                <thead>
+                    <tr>
+                        <th>Node Name</th>
+                        <th>Blockchain Project</th>
+                        <th>User</th>
+                        <th>Plan</th>
+                        <th>Last Check</th>
+                        <th>Next Check</th>
+                        <th>Status</th>
+                        <th>Response Time</th>
+                        <th>Monitoring</th>
+                        <th>Score</th>
+                        <th>Score Artmama</th>
+                        <th>Ardışık Hata</th>
+                        <th>Son Alertler</th>
+                    </tr>
+                </thead>
                 <tbody>
-                                         ${nodes.map(node => {
+                    ${nodes.map(node => {
                        const lastCheckTime = node.lastCheck ? new Date(node.lastCheck).toLocaleString() : 'Never';
                        const plan = node.user.subscriptionStatus;
-                       const isGenys = node.blockchainProject.category === 'genys';
-                       const intervalMs = isGenys ? 30 * 60 * 1000 : (plan === 'premium' ? 15 * 60 * 1000 : 24 * 60 * 60 * 1000);
+                       const isGenysn = node.blockchainProject.category === 'genysn';
+                       const intervalMs = isGenysn ? 30 * 60 * 1000 : (plan === 'premium' ? 15 * 60 * 1000 : 24 * 60 * 60 * 1000);
                        let nextCheck = '-';
                        if (node.lastCheck) {
                          const next = new Date(new Date(node.lastCheck).getTime() + intervalMs);
@@ -128,12 +126,11 @@ app.get('/', async (req, res) => {
                                          node.status === 'unhealthy' ? '❌ Unhealthy' : 
                                          node.status === 'offline' ? '⚫ Offline' : '⏳ Unknown';
                        const planColor = node.user.subscriptionStatus === 'premium' ? '#dcfce7; color: #166534' : '#fef3c7; color: #92400e';
-                       // Genys özel alanlar
-                       const reward = isGenys ? (node.lastReward ?? '-') : '-';
-                       const score = isGenys ? (node.lastScore ?? '-') : '-';
-                       const noReward = isGenys ? (node.consecutiveNoRewardIncrease ?? 0) : '-';
-                       const noScore = isGenys ? (node.consecutiveNoScoreIncrease ?? 0) : '-';
-                       const failures = node.consecutiveFailures ?? 0;
+                       
+                       // Genysn özel alanlar (güncellenmiş field isimleri)
+                       const score = isGenysn ? (node.last_score ?? '-') : '-';
+                       const noScore = isGenysn ? (node.consecutive_no_score_increase ?? 0) : '-';
+                       const failures = node.consecutive_failures ?? 0;
                        const lastAlerts = node.alerts && node.alerts.length > 0 ? node.alerts.map(a => a.type).join(', ') : '-';
                        
                        return `
@@ -149,9 +146,7 @@ app.get('/', async (req, res) => {
                              </td>
                              <td>${node.lastResponseTime ? node.lastResponseTime + 'ms' : '-'}</td>
                              <td>${node.isMonitoring ? '🟢 Active' : '🔴 Paused'}</td>
-                             <td>${reward}</td>
                              <td>${score}</td>
-                             <td>${noReward}</td>
                              <td>${noScore}</td>
                              <td>${failures}</td>
                              <td>${lastAlerts}</td>
