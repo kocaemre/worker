@@ -13,7 +13,7 @@ app.get('/', async (req, res) => {
           select: { email: true, subscriptionStatus: true }
         },
         blockchainProject: {
-          select: { name: true, displayName: true }
+          select: { name: true, displayName: true, category: true }
         },
         alerts: {
           orderBy: { createdAt: 'desc' },
@@ -103,13 +103,20 @@ app.get('/', async (req, res) => {
                          <th>Status</th>
                          <th>Response Time</th>
                          <th>Monitoring</th>
+                         <th>Reward</th>
+                         <th>Score</th>
+                         <th>Reward Artmama</th>
+                         <th>Score Artmama</th>
+                         <th>Ardışık Hata</th>
+                         <th>Son Alertler</th>
                      </tr>
                  </thead>
                 <tbody>
                                          ${nodes.map(node => {
                        const lastCheckTime = node.lastCheck ? new Date(node.lastCheck).toLocaleString() : 'Never';
                        const plan = node.user.subscriptionStatus;
-                       const intervalMs = plan === 'premium' ? 15 * 60 * 1000 : 24 * 60 * 60 * 1000;
+                       const isGenys = node.blockchainProject.category === 'genys';
+                       const intervalMs = isGenys ? 30 * 60 * 1000 : (plan === 'premium' ? 15 * 60 * 1000 : 24 * 60 * 60 * 1000);
                        let nextCheck = '-';
                        if (node.lastCheck) {
                          const next = new Date(new Date(node.lastCheck).getTime() + intervalMs);
@@ -121,6 +128,13 @@ app.get('/', async (req, res) => {
                                          node.status === 'unhealthy' ? '❌ Unhealthy' : 
                                          node.status === 'offline' ? '⚫ Offline' : '⏳ Unknown';
                        const planColor = node.user.subscriptionStatus === 'premium' ? '#dcfce7; color: #166534' : '#fef3c7; color: #92400e';
+                       // Genys özel alanlar
+                       const reward = isGenys ? (node.lastReward ?? '-') : '-';
+                       const score = isGenys ? (node.lastScore ?? '-') : '-';
+                       const noReward = isGenys ? (node.consecutiveNoRewardIncrease ?? 0) : '-';
+                       const noScore = isGenys ? (node.consecutiveNoScoreIncrease ?? 0) : '-';
+                       const failures = node.consecutiveFailures ?? 0;
+                       const lastAlerts = node.alerts && node.alerts.length > 0 ? node.alerts.map(a => a.type).join(', ') : '-';
                        
                        return `
                          <tr>
@@ -135,6 +149,12 @@ app.get('/', async (req, res) => {
                              </td>
                              <td>${node.lastResponseTime ? node.lastResponseTime + 'ms' : '-'}</td>
                              <td>${node.isMonitoring ? '🟢 Active' : '🔴 Paused'}</td>
+                             <td>${reward}</td>
+                             <td>${score}</td>
+                             <td>${noReward}</td>
+                             <td>${noScore}</td>
+                             <td>${failures}</td>
+                             <td>${lastAlerts}</td>
                          </tr>
                        `;
                      }).join('')}

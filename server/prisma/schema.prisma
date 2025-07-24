@@ -7,24 +7,22 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// NextAuth.js Models
 model Account {
-  id                String  @id @default(cuid())
-  userId            String  @map("user_id")
+  id                String   @id @default(cuid())
+  userId            String   @map("user_id")
   type              String
   provider          String
-  providerAccountId String  @map("provider_account_id")
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
+  providerAccountId String   @map("provider_account_id")
+  refresh_token     String?
+  access_token      String?
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String? @db.Text
+  id_token          String?
   session_state     String?
   createdAt         DateTime @default(now()) @map("created_at")
   updatedAt         DateTime @updatedAt @map("updated_at")
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
   @@map("accounts")
@@ -37,29 +35,30 @@ model Session {
   expires      DateTime
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("sessions")
 }
 
 model User {
-  id                 String    @id @default(cuid())
-  name               String?
-  email              String?   @unique
-  emailVerified      DateTime? @map("email_verified")
-  image              String?
-  role               String    @default("user") @map("role") // user, admin
-  subscriptionStatus String    @default("free") @map("subscription_status")
-  telegramChatId     String?   @map("telegram_chat_id")
-  notificationEmail  String?   @map("notification_email") // Custom notification email for alerts
-  createdAt          DateTime  @default(now()) @map("created_at")
-  updatedAt          DateTime  @updatedAt @map("updated_at")
-
-  accounts Account[]
-  sessions Session[]
-  nodes    Node[]
-  alerts   Alert[]
+  id                       String         @id @default(cuid())
+  name                     String?
+  email                    String?        @unique
+  emailVerified            DateTime?      @map("email_verified")
+  image                    String?
+  role                     String         @default("user") @map("role")
+  subscriptionStatus       String         @default("free") @map("subscription_status")
+  telegramChatId           String?        @map("telegram_chat_id")
+  notificationEmail        String?        @map("notification_email")
+  createdAt                DateTime       @default(now()) @map("created_at")
+  updatedAt                DateTime       @updatedAt @map("updated_at")
+  last_paid_wallet_address String?
+  subscription_valid_until DateTime?
+  accounts                 Account[]
+  alerts                   Alert[]
+  nodes                    Node[]
+  payment_logs             payment_logs[]
+  sessions                 Session[]
 
   @@map("users")
 }
@@ -74,52 +73,52 @@ model VerificationToken {
   @@map("verification_tokens")
 }
 
-// Zepatrol Application Models
 model BlockchainProject {
-  id                String   @id @default(cuid())
-  name              String   @unique // avail, ethereum, polygon, etc.
-  displayName       String   // "Avail Network", "Ethereum Mainnet"
-  description       String?
-  iconUrl           String?  @map("icon_url") // Project logo/icon
-  validationMethod  String   // 'api', etc. (required)
-  validationUrl     String   // URL to validate node (required)
-  userInputType     String   // e.g. 'wallet', 'text', 'number' (required)
-  userInputLabel    String   // e.g. 'Wallet Address', 'Node Name' (required)
-  isActive          Boolean  @default(true) @map("is_active")
-  documentationUrl  String?  @map("documentation_url")
-  createdBy         String?  @map("created_by") // Admin user who created this
-  createdAt         DateTime @default(now()) @map("created_at")
-  updatedAt         DateTime @updatedAt @map("updated_at")
-
-  nodes Node[]
+  id               String   @id @default(cuid())
+  name             String   @unique
+  displayName      String
+  description      String?
+  iconUrl          String?  @map("icon_url")
+  validationMethod String
+  validationUrl    String
+  userInputType    String
+  userInputLabel   String
+  isActive         Boolean  @default(true) @map("is_active")
+  documentationUrl String?  @map("documentation_url")
+  createdBy        String?  @map("created_by")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+  category         String?  @db.VarChar(32)
+  nodes            Node[]
 
   @@map("blockchain_projects")
 }
 
 model Node {
-  id                String    @id @default(cuid())
-  userId            String    @map("user_id")
-  blockchainProjectId String    @map("blockchain_project_id")
-  name              String    // User-defined name for their node
-  
-  // User-provided credentials/identifiers
-  nodeConfig        String    @map("node_config") // JSON: {"wallet_address": "0x123...", "api_key": "...", etc.}
-  
-  // Monitoring status
-  status            String    @default("unknown") @map("status") // healthy, unhealthy, offline, unknown
-  lastCheck         DateTime? @map("last_check")
-  lastResponseTime  Int?      @map("last_response_time") // milliseconds
-  lastError         String?   @map("last_error") // Last error message if any
-  uptimePercentage  Float?    @default(100) @map("uptime_percentage")
-  isMonitoring      Boolean   @default(true) @map("is_monitoring")
-  
-  // Metadata
-  createdAt         DateTime  @default(now()) @map("created_at")
-  updatedAt         DateTime  @updatedAt @map("updated_at")
-
-  user              User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  blockchainProject BlockchainProject @relation(fields: [blockchainProjectId], references: [id], onDelete: Cascade)
-  alerts            Alert[]
+  id                             String            @id @default(cuid())
+  userId                         String            @map("user_id")
+  blockchainProjectId            String            @map("blockchain_project_id")
+  name                           String
+  nodeConfig                     String            @map("node_config")
+  status                         String            @default("unknown") @map("status")
+  lastCheck                      DateTime?         @map("last_check")
+  lastResponseTime               Int?              @map("last_response_time")
+  lastError                      String?           @map("last_error")
+  uptimePercentage               Float?            @default(100) @map("uptime_percentage")
+  isMonitoring                   Boolean           @default(true) @map("is_monitoring")
+  createdAt                      DateTime          @default(now()) @map("created_at")
+  updatedAt                      DateTime          @updatedAt @map("updated_at")
+  last_reward                    Float?
+  last_score                     Float?
+  last_reward_update             DateTime?         @db.Timestamp(6)
+  last_score_update              DateTime?         @db.Timestamp(6)
+  consecutive_no_reward_increase Int?              @default(0)
+  consecutive_no_score_increase  Int?              @default(0)
+  consecutive_failures           Int?              @default(0)
+  last_failure_at                DateTime?         @db.Timestamp(6)
+  alerts                         Alert[]
+  blockchainProject              BlockchainProject @relation(fields: [blockchainProjectId], references: [id], onDelete: Cascade)
+  user                           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("nodes")
 }
@@ -128,15 +127,25 @@ model Alert {
   id        String   @id @default(cuid())
   userId    String   @map("user_id")
   nodeId    String   @map("node_id")
-  type      String   @map("alert_type") // downtime, slow_response, back_online, etc.
-  severity  String   @default("medium") @map("severity") // low, medium, high, critical
+  type      String   @map("alert_type")
+  severity  String   @default("medium") @map("severity")
   message   String
   isRead    Boolean  @default(false) @map("is_read")
-  isSent    Boolean  @default(false) @map("is_sent") // Email/Telegram sent
+  isSent    Boolean  @default(false) @map("is_sent")
   createdAt DateTime @default(now()) @map("created_at")
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  node Node @relation(fields: [nodeId], references: [id], onDelete: Cascade)
+  node      Node     @relation(fields: [nodeId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("alerts")
-} 
+}
+
+model payment_logs {
+  id               String   @id
+  user_id          String
+  wallet_address   String
+  tx_hash          String
+  amount           Float
+  paid_at          DateTime @default(now())
+  duration_in_days Int      @default(30)
+  users            User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}

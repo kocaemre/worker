@@ -8,10 +8,17 @@ const transport = nodemailer.createTransport({
 });
 
 /**
- * Send email.
+ * Send email with HTML support.
  * @param {string} to
  * @param {string} subject
- * @param {string} text
+ * @param {string} text - Plain text version
+ * @param {string} html - HTML version (optional)
  */
-export const sendEmail = (to, subject, text) =>
-  transport.sendMail({ from: env.EMAIL_USER, to, subject, text }); 
+export const sendEmail = (to, subject, text, html = null) =>
+  transport.sendMail({ 
+    from: env.EMAIL_USER, 
+    to, 
+    subject, 
+    text,
+    ...(html && { html })
+  }); 
