@@ -117,6 +117,7 @@ model Node {
   consecutive_failures           Int?              @default(0)
   last_failure_at                DateTime?         @db.Timestamp(6)
   alerts                         Alert[]
+  performanceHistory             NodePerformanceHistory[]
   blockchainProject              BlockchainProject @relation(fields: [blockchainProjectId], references: [id], onDelete: Cascade)
   user                           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -148,4 +149,22 @@ model payment_logs {
   paid_at          DateTime @default(now())
   duration_in_days Int      @default(30)
   users            User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
+
+model NodePerformanceHistory {
+  id                              String   @id @default(cuid())
+  nodeId                          String   @map("node_id")
+  recordedAt                      DateTime @map("recorded_at")
+  score                           Float?
+  reward                          Float?
+  status                          String
+  uptimePercentage                Float?   @map("uptime_percentage")
+  responseTime                    Int?     @map("response_time")
+  consecutiveFailures             Int?     @default(0) @map("consecutive_failures")
+  consecutiveNoScoreIncrease      Int?     @default(0) @map("consecutive_no_score_increase")
+  consecutiveNoRewardIncrease     Int?     @default(0) @map("consecutive_no_reward_increase")
+  createdAt                       DateTime @default(now()) @map("created_at")
+  node                            Node     @relation(fields: [nodeId], references: [id], onDelete: Cascade)
+
+  @@map("node_performance_history")
 }

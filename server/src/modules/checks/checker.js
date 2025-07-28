@@ -171,5 +171,21 @@ export const runChecks = async ({ prisma, logger }) => {
       where: { id: node.id },
       data: updateData,
     });
+
+    // Save performance history for daily summaries
+    await prisma.nodePerformanceHistory.create({
+      data: {
+        nodeId: node.id,
+        recordedAt: new Date(),
+        score: score,
+        reward: node.last_reward,
+        status: result.ok ? 'healthy' : 'unhealthy',
+        uptimePercentage: node.uptimePercentage,
+        responseTime: result.latency ?? null,
+        consecutiveFailures: consecutive_failures,
+        consecutiveNoScoreIncrease: updateData.consecutive_no_score_increase || node.consecutive_no_score_increase || 0,
+        consecutiveNoRewardIncrease: node.consecutive_no_reward_increase || 0
+      }
+    });
   }
 }; 

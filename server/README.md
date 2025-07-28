@@ -27,6 +27,7 @@ _Zincir düğümlerini **sıfır operasyon** ile izleyen, Docker-ready cron serv
 * ⏲️ **Plan-bazlı sıklık** – Free: 24 saat, Premium: 15 dk.
 * 🔍 **Çoklu yöntem** – HTTP, JSON-RPC, ICMP Ping.
 * 🚨 **Akıllı uyarılar** – E-posta (tüm planlar) + Telegram (Premium).
+* 📊 **Günlük Özetler** – 17:00 UTC'de e-posta ve Telegram ile detaylı performans raporları.
 * 📈 **Prometheus** – `/metrics` ile gerçek zamanlı istatistikler.
 * 🐳 **Docker Compose** – `postgres + worker` tek komutla ayağa kalkar.
 * 🧪 **≥ 90 % test coverage** – Jest + Testcontainers.
@@ -85,6 +86,7 @@ $ npm ci && npm run migrate && npm run seed
 $ npm start
 ```
 > SMTP & Telegram ayarlarını test etmek için: `npm run test-alert`
+> Günlük özet sistemini test etmek için: `node scripts/test-daily-summary.js`
 
 ## Ortam Değişkenleri
 Çoğu değişken `env.example` içinde örneklenmiştir:
@@ -104,11 +106,16 @@ Temel tablolar: **User**, **Node**, **Alert**, **BlockchainProject**.
 1. node-cron, `env.CHECK_INTERVAL_CRON` ifadesine göre `checker` modülünü tetikler.
 2. Checker, izlenen tüm node'ları çeker ve plan bazlı kontrol sıklığına göre filtreler.
 3. Node'un `blockchainProject.validationMethod` alanına bakarak HTTP / JSON-RPC / API kontrolü yapar.
-4. Başarısızsa `Alert` tablosuna kayıt yazılır.
-5. Başarısızlık durumunda:
+4. Her kontrol sonrası performans geçmişi `NodePerformanceHistory` tablosuna kaydedilir.
+5. Başarısızlık durumunda `Alert` tablosuna kayıt yazılır.
+6. Başarısızlık durumunda:
    * Her plan → E-posta (notificationEmail veya email'e)
    * Premium → Telegram (chatId mevcutsa)
-6. Plan bazlı kontrol sıklığı: Premium 15 dk, Free 24 saat.
+7. **Günlük Özetler**: Her gün 17:00 UTC'de tüm kullanıcılar için:
+   * Node performans geçmişi analiz edilir
+   * 24 saatlik değişimler hesaplanır
+   * E-posta ve Telegram ile detaylı rapor gönderilir
+8. Plan bazlı kontrol sıklığı: Premium 15 dk, Free 24 saat.
 
 ## Test & Kapsama
 ```bash
